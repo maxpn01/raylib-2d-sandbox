@@ -50,7 +50,6 @@ func (p *Player) draw() {
 func (p *Player) movePlayer(window *Window, dt float32) {
 	move := rl.Vector2{}
 
-	// wasd movement
 	if rl.IsKeyDown(rl.KeyW) {
 		move.Y -= 1
 	}
@@ -64,7 +63,6 @@ func (p *Player) movePlayer(window *Window, dt float32) {
 		move.X += 1
 	}
 
-	// shift speed
 	speed := p.speed
 	if rl.IsKeyDown(rl.KeyLeftShift) {
 		speed *= 2
@@ -78,13 +76,12 @@ func (p *Player) movePlayer(window *Window, dt float32) {
 		p.pos.Y += move.Y * speed * dt
 	}
 
-	// clamp to game window edges
 	clamp(0, &p.pos.X, &p.size.X, float32(window.width))
 	clamp(0, &p.pos.Y, &p.size.Y, float32(window.height))
 }
 
 func (p *Player) handlePlayerFruitCollision(fs *FruitSpawner) {
-	expForNextLvl := p.calcExpForNextLvl(p.lvl)
+	expForNextLvl := calcExpForNextLvl(p.lvl)
 
 	for i := len(fs.fruits) - 1; i >= 0; i-- {
 		hasPlayerCollidedWithFruit := checkCollisions(p.pos, p.size, fs.fruits[i].pos, fs.fruits[i].size)
@@ -108,8 +105,4 @@ func (p *Player) handlePlayerFruitCollision(fs *FruitSpawner) {
 		p.speed += playerSpeedIncrement
 		playerSpeedIncrement += playerSpeedIncrement
 	}
-}
-
-func (p *Player) calcExpForNextLvl(lvl int) float32 {
-	return float32(lvl * lvl)
 }

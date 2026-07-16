@@ -27,3 +27,7 @@ func clamp(min float32, targetPos *float32, targetSize *float32, max float32) {
 		*targetPos = max - *targetSize
 	}
 }
+
+func calcExpForNextLvl(lvl int) float32 {
+	return float32(lvl * lvl)
+}

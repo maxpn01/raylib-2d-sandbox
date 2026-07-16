@@ -50,14 +50,28 @@ const snakeExpIncrement = 0.25
 const snakeHpIncrement = 0.25
 const snakeSpeedIncrement = 0.25
 
+const snakeAsleepExpIncrement = 0.001
+const snakeAsleepHpIncrement = 0.001
+
+// const snakeAwakeSeconds = 120
+// const snakeAsleepSeconds = 60
+
+const snakeAwakeSeconds = 10
+const snakeAsleepSeconds = 5
+
+var awakeTimerSeconds float32 = snakeAwakeSeconds
+var asleepTimerSeconds float32 = snakeAsleepSeconds
+
 func (s *Snake) update(dt float32) {
+	s.updateAwakenessStatus(dt)
+
 	switch s.actionState {
-	case 0:
+	case ActionSearchingFood:
 		s.searchFood(fruitSpawner.fruits, dt)
-	case 1:
+	case ActionEating:
 		s.eatFood(fruitSpawner, s.targetIndex)
-		// case 2:
-		// 	sleep()
+	case ActionSleeping:
+		s.sleep(dt)
 	}
 }
 
@@ -130,13 +144,12 @@ func (s *Snake) moveSnake(targetPos, targetSize rl.Vector2, window *Window, dt f
 		s.pos.Y += move.Y * s.speed * dt
 	}
 
-	// clamp to game window edges
 	clamp(0, &s.pos.X, &s.size.X, float32(window.width))
 	clamp(0, &s.pos.Y, &s.size.Y, float32(window.height))
 }
 
 func (s *Snake) checkSnakeFruitCollision(fs *FruitSpawner) (bool, int) {
-	expForNextLvl := s.calcExpForNextLvl(s.lvl)
+	expForNextLvl := calcExpForNextLvl(s.lvl)
 
 	for i := len(fs.fruits) - 1; i >= 0; i-- {
 		hasSnakeCollidedWithFruit := checkCollisions(s.pos, s.size, fs.fruits[i].pos, fs.fruits[i].size)
@@ -162,13 +175,39 @@ func (s *Snake) checkSnakeFruitCollision(fs *FruitSpawner) (bool, int) {
 	return false, -1
 }
 
-func (s *Snake) calcExpForNextLvl(lvl int) float32 {
-	return float32(lvl * lvl)
-}
-
 func (s *Snake) eatFood(fs *FruitSpawner, fruitIndex int) {
-	s.hp += snakeExpIncrement
+	s.exp += snakeExpIncrement
 	fs.despawnFruit(fruitIndex)
 	s.actionState = ActionSearchingFood
 	s.targetIndex = -1
+}
+
+func (s *Snake) updateAwakenessStatus(dt float32) {
+	switch s.actionState {
+	case ActionSearchingFood:
+		fallthrough
+	case ActionEating:
+		if awakeTimerSeconds > 0 {
+			awakeTimerSeconds -= 1 * dt
+		} else {
+			s.actionState = ActionSleeping
+			asleepTimerSeconds = snakeAsleepSeconds
+		}
+	case ActionSleeping:
+		if asleepTimerSeconds > 0 {
+			asleepTimerSeconds -= 1 * dt
+		} else {
+			s.actionState = ActionSearchingFood
+			awakeTimerSeconds = snakeAwakeSeconds
+		}
+	}
+}
+
+// initial crude version (might extend later)
+func (s *Snake) sleep(dt float32) {
+	s.exp += snakeAsleepExpIncrement * dt
+
+	if s.hp < s.maxHP {
+		s.hp += snakeAsleepHpIncrement * dt
+	}
 }
