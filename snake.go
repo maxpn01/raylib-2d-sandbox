@@ -53,11 +53,8 @@ const snakeSpeedIncrement = 0.25
 const snakeAsleepExpIncrement = 0.001
 const snakeAsleepHpIncrement = 0.001
 
-// const snakeAwakeSeconds = 120
-// const snakeAsleepSeconds = 60
-
-const snakeAwakeSeconds = 10
-const snakeAsleepSeconds = 5
+const snakeAwakeSeconds = 120
+const snakeAsleepSeconds = 60
 
 var awakeTimerSeconds float32 = snakeAwakeSeconds
 var asleepTimerSeconds float32 = snakeAsleepSeconds
@@ -102,7 +99,7 @@ func (s *Snake) searchFood(fruits []Fruit, dt float32) {
 		}
 	}
 
-	s.moveSnake(closestFruitPos, closestFruitSize, window, dt)
+	s.moveSnake(closestFruitPos, closestFruitSize, dt)
 
 	hasSnakeCollidedWithFruit, fruitIndex := s.checkSnakeFruitCollision(fruitSpawner)
 
@@ -112,7 +109,7 @@ func (s *Snake) searchFood(fruits []Fruit, dt float32) {
 	}
 }
 
-func (s *Snake) moveSnake(targetPos, targetSize rl.Vector2, window *Window, dt float32) {
+func (s *Snake) moveSnake(targetPos, targetSize rl.Vector2, dt float32) {
 	move := rl.Vector2{}
 
 	snakeCenterX := s.pos.X + s.size.X/2
@@ -144,8 +141,8 @@ func (s *Snake) moveSnake(targetPos, targetSize rl.Vector2, window *Window, dt f
 		s.pos.Y += move.Y * s.speed * dt
 	}
 
-	clamp(0, &s.pos.X, &s.size.X, float32(window.width))
-	clamp(0, &s.pos.Y, &s.size.Y, float32(window.height))
+	clamp(0, &s.pos.X, &s.size.X, gameMap.size.X)
+	clamp(0, &s.pos.Y, &s.size.Y, gameMap.size.Y)
 }
 
 func (s *Snake) checkSnakeFruitCollision(fs *FruitSpawner) (bool, int) {

@@ -38,7 +38,7 @@ func NewFruitSpawner(size rl.Vector2, color color.RGBA, spawnIntervalMaxSeconds 
 }
 
 func (fs *FruitSpawner) update(dt float32) {
-	spawnFruit(window, fs, dt)
+	spawnFruit(fs, dt)
 }
 
 func (fs *FruitSpawner) draw() {
@@ -47,12 +47,12 @@ func (fs *FruitSpawner) draw() {
 	}
 }
 
-func spawnFruit(window *Window, fs *FruitSpawner, dt float32) {
+func spawnFruit(fs *FruitSpawner, dt float32) {
 	fs.fruitSpawnTimer += dt
 
 	if fs.fruitSpawnTimer >= float32(fs.fruitSpawnInterval) && len(fs.fruits) < fs.maxFruits {
-		fruitRandX := rand.Intn(int(window.width) - int(fs.fruitSize.X))
-		fruitRandY := rand.Intn(int(window.height) - int(fs.fruitSize.Y))
+		fruitRandX := rand.Intn(int(gameMap.size.X) - int(fs.fruitSize.X))
+		fruitRandY := rand.Intn(int(gameMap.size.Y) - int(fs.fruitSize.Y))
 
 		fs.fruits = append(fs.fruits, Fruit{
 			pos:   rl.NewVector2(float32(fruitRandX), float32(fruitRandY)),
