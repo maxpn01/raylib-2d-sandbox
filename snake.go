@@ -141,8 +141,8 @@ func (s *Snake) moveSnake(targetPos, targetSize rl.Vector2, dt float32) {
 		s.pos.Y += move.Y * s.speed * dt
 	}
 
-	clamp(0, &s.pos.X, &s.size.X, gameMap.size.X)
-	clamp(0, &s.pos.Y, &s.size.Y, gameMap.size.Y)
+	clamp(gameMap.edgePosX.start, &s.pos.X, &s.size.X, gameMap.edgePosX.end)
+	clamp(gameMap.edgePosX.start, &s.pos.Y, &s.size.Y, gameMap.edgePosY.end)
 }
 
 func (s *Snake) checkSnakeFruitCollision(fs *FruitSpawner) (bool, int) {

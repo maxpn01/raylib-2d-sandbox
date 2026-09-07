@@ -51,12 +51,14 @@ func spawnFruit(fs *FruitSpawner, dt float32) {
 	fs.fruitSpawnTimer += dt
 
 	if fs.fruitSpawnTimer >= float32(fs.fruitSpawnInterval) && len(fs.fruits) < fs.maxFruits {
-		fruitRandX := rand.Intn(int(gameMap.size.X) - int(fs.fruitSize.X))
-		fruitRandY := rand.Intn(int(gameMap.size.Y) - int(fs.fruitSize.Y))
+		x, y := gameMap.edgePosX, gameMap.edgePosY
+
+		fruitRandX := randomBetween(x.start, x.end-fs.fruitSize.X)
+		fruitRandY := randomBetween(y.start, y.end-fs.fruitSize.Y)
 
 		fs.fruits = append(fs.fruits, Fruit{
-			pos:   rl.NewVector2(float32(fruitRandX), float32(fruitRandY)),
-			size:  rl.NewVector2(fs.fruitSize.X, fs.fruitSize.X),
+			pos:   rl.NewVector2(fruitRandX, fruitRandY),
+			size:  fs.fruitSize,
 			color: fs.fruitColor,
 		})
 

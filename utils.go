@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math/rand"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -20,7 +22,7 @@ func findSquaredEuclideanDistance(pos1 rl.Vector2, pos2 rl.Vector2) float32 {
 
 func clamp(min float32, targetPos *float32, targetSize *float32, max float32) {
 	if *targetPos < min {
-		*targetPos = 0
+		*targetPos = min
 	}
 
 	if *targetPos+*targetSize > max {
@@ -30,4 +32,8 @@ func clamp(min float32, targetPos *float32, targetSize *float32, max float32) {
 
 func calcExpForNextLvl(lvl int) float32 {
 	return float32(lvl * lvl)
+}
+
+func randomBetween[T int | float32](min, max T) T {
+	return min + T(rand.Intn(int(max-min)+1))
 }

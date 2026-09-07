@@ -12,10 +12,17 @@ type Cell struct {
 	color color.RGBA
 }
 
+type EdgePos struct {
+	start float32
+	end   float32
+}
+
 type Map struct {
 	sizeInCells rl.Vector2
 	cellSize    rl.Vector2
 	size        rl.Vector2
+	edgePosX    EdgePos
+	edgePosY    EdgePos
 	cells       [][]Cell
 }
 
@@ -41,7 +48,9 @@ func NewMap(size, cellSize rl.Vector2, bgColor, accentColor color.RGBA) *Map {
 	return &Map{
 		sizeInCells: size,
 		cellSize:    cells[0][0].size,
-		size:        rl.NewVector2(size.X*cells[0][0].size.X, size.Y*cells[0][0].size.Y),
+		size:        rl.NewVector2(size.X*cellSize.X, size.Y*cellSize.Y),
+		edgePosX:    EdgePos{start: cellSize.X, end: size.X*cellSize.X - cellSize.X}, // to account for border cells
+		edgePosY:    EdgePos{start: cellSize.Y, end: size.Y*cellSize.Y - cellSize.Y}, // to account for border cells
 		cells:       cells,
 	}
 }

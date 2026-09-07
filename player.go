@@ -76,8 +76,8 @@ func (p *Player) movePlayer(dt float32) {
 		p.pos.Y += move.Y * speed * dt
 	}
 
-	clamp(0, &p.pos.X, &p.size.X, gameMap.size.X)
-	clamp(0, &p.pos.Y, &p.size.Y, gameMap.size.Y)
+	clamp(gameMap.edgePosX.start, &p.pos.X, &p.size.X, gameMap.edgePosX.end)
+	clamp(gameMap.edgePosX.start, &p.pos.Y, &p.size.Y, gameMap.edgePosY.end)
 }
 
 func (p *Player) handlePlayerFruitCollision(fs *FruitSpawner) {
