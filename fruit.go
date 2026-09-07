@@ -43,7 +43,7 @@ func (fs *FruitSpawner) update(dt float32) {
 
 func (fs *FruitSpawner) draw() {
 	for _, fruit := range fs.fruits {
-		rl.DrawRectangle(int32(fruit.pos.X), int32(fruit.pos.Y), int32(fruit.size.X), int32(fruit.size.Y), fruit.color)
+		rl.DrawRectangleV(fruit.pos, fruit.size, fruit.color)
 	}
 }
 

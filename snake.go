@@ -73,7 +73,7 @@ func (s *Snake) update(dt float32) {
 }
 
 func (s *Snake) draw() {
-	rl.DrawRectangle(int32(s.pos.X), int32(s.pos.Y), int32(s.size.X), int32(s.size.Y), s.color)
+	rl.DrawRectangleV(s.pos, s.size, s.color)
 }
 
 func (s *Snake) searchFood(fruits []Fruit, dt float32) {

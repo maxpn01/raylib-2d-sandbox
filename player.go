@@ -44,7 +44,7 @@ func (p *Player) update(dt float32) {
 }
 
 func (p *Player) draw() {
-	rl.DrawRectangle(int32(p.pos.X), int32(p.pos.Y), int32(p.size.X), int32(p.size.Y), p.color)
+	rl.DrawRectangleV(p.pos, p.size, p.color)
 }
 
 func (p *Player) movePlayer(dt float32) {
