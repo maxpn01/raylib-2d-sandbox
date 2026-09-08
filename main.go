@@ -23,6 +23,11 @@ var window = &Window{
 
 var windowCenter = rl.NewVector2(float32(window.width)/2, float32(window.height)/2)
 
+var menu = NewMenu([]*MenuButton{
+	NewMenuButton("play", ActionPlay),
+	NewMenuButton("exit", ActionExit),
+}, 30, rl.Black)
+
 /* Game entities */
 var gameMap = NewMap(rl.NewVector2(200, 200), rl.NewVector2(10, 10), rl.Black, rl.Gray)
 var player = NewPlayer(rl.NewVector2(300, 300), rl.NewVector2(30, 30), rl.Red, 400, 100, 100)
@@ -60,38 +65,60 @@ var camera = rl.NewCamera2D(windowCenter, playerTarget, 0, 1)
 
 func main() {
 	rl.InitWindow(int32(window.width), int32(window.height), window.title)
-	rl.SetTargetFPS(60)
+	defer rl.CloseWindow()
 
-	for !rl.WindowShouldClose() {
+	rl.SetTargetFPS(60)
+	rl.SetExitKey(rl.KeyNull)
+
+	menuOpen := true
+	exitRequested := false
+
+	for !rl.WindowShouldClose() && !exitRequested {
 		dt := rl.GetFrameTime()
 
-		for _, e := range entities {
-			e.update(dt)
+		if rl.IsKeyPressed(rl.KeyEscape) {
+			menuOpen = !menuOpen
 		}
 
-		camera.Target = rl.NewVector2(player.pos.X+player.size.X/2.0, player.pos.Y+player.size.Y/2.0)
+		if !menuOpen {
+			for _, e := range entities {
+				e.update(dt)
+			}
 
-		for _, e := range hud {
-			e.update(dt)
+			camera.Target = rl.NewVector2(
+				player.pos.X+player.size.X/2.0,
+				player.pos.Y+player.size.Y/2.0,
+			)
+
+			for _, e := range hud {
+				e.update(dt)
+			}
 		}
 
 		rl.BeginDrawing()
 		rl.ClearBackground(window.bgColor)
 
-		rl.BeginMode2D(camera)
+		if menuOpen {
+			switch menu.draw() {
+			case ActionPlay:
+				menuOpen = false
+			case ActionExit:
+				exitRequested = true
+			}
+		} else {
+			rl.BeginMode2D(camera)
 
-		for _, e := range entities {
-			e.draw()
-		}
+			for _, e := range entities {
+				e.draw()
+			}
 
-		rl.EndMode2D()
+			rl.EndMode2D()
 
-		for _, e := range hud {
-			e.draw()
+			for _, e := range hud {
+				e.draw()
+			}
 		}
 
 		rl.EndDrawing()
 	}
-
-	rl.CloseWindow()
 }

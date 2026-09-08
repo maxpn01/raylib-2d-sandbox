@@ -1,0 +1,118 @@
+package main
+
+import (
+	"image/color"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
+
+type Action int
+
+const (
+	ActionNone Action = iota
+	ActionPlay
+	ActionExit
+)
+
+type MenuButton struct {
+	Text      string
+	TextColor color.RGBA
+	FontSize  int32
+
+	BackgroundColor color.RGBA
+	HoverColor      color.RGBA
+
+	Bounds      rl.Rectangle
+	BoundsColor color.RGBA
+
+	Action Action
+}
+
+func NewMenuButton(text string, action Action) *MenuButton {
+	return &MenuButton{
+		Text:            text,
+		TextColor:       rl.White,
+		FontSize:        28,
+		BackgroundColor: rl.Black,
+		HoverColor:      rl.DarkGray,
+		Bounds:          rl.NewRectangle(0, 0, 200, 60),
+		BoundsColor:     rl.White,
+		Action:          action,
+	}
+
+}
+
+func (btn *MenuButton) draw() Action {
+	hovered := rl.CheckCollisionPointRec(
+		rl.GetMousePosition(),
+		btn.Bounds,
+	)
+
+	bgColor := btn.BackgroundColor
+
+	if hovered {
+		bgColor = btn.HoverColor
+	}
+
+	rl.DrawRectangleRec(btn.Bounds, bgColor)
+	rl.DrawRectangleLinesEx(btn.Bounds, 2, btn.BoundsColor)
+
+	textWidth := float32(rl.MeasureText(btn.Text, btn.FontSize))
+	textX := btn.Bounds.X + (btn.Bounds.Width-textWidth)/2
+	textY := btn.Bounds.Y + (btn.Bounds.Height-float32(btn.FontSize))/2
+
+	rl.DrawText(btn.Text, int32(textX), int32(textY), btn.FontSize, btn.TextColor)
+
+	if hovered && rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+		return btn.Action
+	}
+
+	return ActionNone
+}
+
+type Menu struct {
+	Options         []*MenuButton
+	Gap             float32
+	BackgroundColor color.RGBA
+}
+
+func NewMenu(options []*MenuButton, gap float32, bgColor color.RGBA) *Menu {
+	return &Menu{
+		Options:         options,
+		Gap:             gap,
+		BackgroundColor: bgColor,
+	}
+}
+
+func (m *Menu) draw() Action {
+	rl.DrawRectangle(
+		0, 0,
+		int32(rl.GetScreenWidth()),
+		int32(rl.GetScreenHeight()),
+		m.BackgroundColor,
+	)
+
+	var totalHeight float32
+	for i, btn := range m.Options {
+		totalHeight += btn.Bounds.Height
+		if i > 0 {
+			totalHeight += m.Gap
+		}
+	}
+
+	y := (float32(rl.GetScreenHeight()) - totalHeight) / 2
+	action := ActionNone
+
+	for _, btn := range m.Options {
+		btn.Bounds.X = (float32(rl.GetScreenWidth()) - btn.Bounds.Width) / 2
+		btn.Bounds.Y = y
+
+		if clickedAction := btn.draw(); clickedAction != ActionNone {
+			action = clickedAction
+		}
+
+		y += btn.Bounds.Height + m.Gap
+	}
+
+	return action
+}
