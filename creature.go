@@ -67,6 +67,8 @@ func (c *Creature) update(dt float32) {
 	case ActionSleeping:
 		c.sleep(dt)
 	}
+
+	c.handleLevelUp()
 }
 
 func (c *Creature) draw() {
@@ -143,8 +145,6 @@ func (c *Creature) moveCreature(targetPos, targetSize rl.Vector2, dt float32) {
 }
 
 func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
-	expForNextLvl := calcExpForNextLvl(c.lvl)
-
 	for i := len(fs.fruits) - 1; i >= 0; i-- {
 		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, fs.fruits[i].pos, fs.fruits[i].size)
 
@@ -153,26 +153,11 @@ func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
 		}
 	}
 
-	if c.exp == expForNextLvl {
-		c.exp -= expForNextLvl
-		c.lvl++
-
-		if c.hp < c.maxHP {
-			c.hp += playerHpIncrement
-		}
-		c.speed += creatureSpeedIncrement
-	}
-
 	return false, -1
 }
 
 func (c *Creature) eatFood() {
-	expForNextLvl := calcExpForNextLvl(c.lvl)
-
-	if c.exp < expForNextLvl {
-		c.exp += creatureExpIncrement
-	}
-
+	c.exp += creatureExpIncrement
 	c.actionState = ActionSearchingFood
 }
 
@@ -200,5 +185,15 @@ func (c *Creature) sleep(dt float32) {
 
 	if c.hp < c.maxHP {
 		c.hp += creatureAsleepHpIncrement * dt
+	}
+}
+
+func (c *Creature) handleLevelUp() {
+	for c.lvl < c.maxLvl && c.exp >= calcExpForNextLvl(c.lvl) {
+		c.exp -= calcExpForNextLvl(c.lvl)
+		c.lvl++
+
+		c.hp = min(c.hp+creatureHpIncrement, c.maxHP)
+		c.speed += creatureSpeedIncrement
 	}
 }

@@ -41,6 +41,7 @@ var playerSpeedIncrement float32 = 0.25
 func (p *Player) update(dt float32) {
 	p.movePlayer(dt)
 	p.handlePlayerFruitCollision(fruitSpawner)
+	p.handleLevelUp()
 }
 
 func (p *Player) draw() {
@@ -81,28 +82,22 @@ func (p *Player) movePlayer(dt float32) {
 }
 
 func (p *Player) handlePlayerFruitCollision(fs *FruitSpawner) {
-	expForNextLvl := calcExpForNextLvl(p.lvl)
-
 	for i := len(fs.fruits) - 1; i >= 0; i-- {
 		hasPlayerCollidedWithFruit := checkCollisions(p.pos, p.size, fs.fruits[i].pos, fs.fruits[i].size)
 
 		if hasPlayerCollidedWithFruit {
-			if p.exp < expForNextLvl {
-				p.exp += playerExpIncrement
-			}
+			p.exp += playerExpIncrement
 			fs.despawnFruit(i)
 		}
 	}
+}
 
-	if p.exp == expForNextLvl {
-		p.exp -= expForNextLvl
+func (p *Player) handleLevelUp() {
+	for p.lvl < p.maxLvl && p.exp >= calcExpForNextLvl(p.lvl) {
+		p.exp -= calcExpForNextLvl(p.lvl)
 		p.lvl++
 
-		if p.hp < p.maxHP {
-			p.hp += playerHpIncrement
-			playerHpIncrement += playerHpIncrement
-		}
+		p.hp = min(p.hp+playerHpIncrement, p.maxHP)
 		p.speed += playerSpeedIncrement
-		playerSpeedIncrement += playerSpeedIncrement
 	}
 }
