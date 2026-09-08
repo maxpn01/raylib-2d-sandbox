@@ -27,8 +27,6 @@ type Creature struct {
 	hp    float32
 	maxHP float32
 
-	targetIndex int
-
 	actionState CreatureActionState
 }
 
@@ -65,7 +63,7 @@ func (c *Creature) update(dt float32) {
 	case ActionSearchingFood:
 		c.searchFood(fruitSpawner.fruits, dt)
 	case ActionEating:
-		c.eatFood(fruitSpawner, c.targetIndex)
+		c.eatFood()
 	case ActionSleeping:
 		c.sleep(dt)
 	}
@@ -103,8 +101,8 @@ func (c *Creature) searchFood(fruits []Fruit, dt float32) {
 	hasCreatureCollidedWithFruit, fruitIndex := c.checkCreatureFruitCollision(fruitSpawner)
 
 	if hasCreatureCollidedWithFruit && fruitIndex >= 0 && fruitIndex < len(fruits) {
+		fruitSpawner.despawnFruit(fruitIndex)
 		c.actionState = ActionEating
-		c.targetIndex = fruitIndex
 	}
 }
 
@@ -151,9 +149,6 @@ func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
 		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, fs.fruits[i].pos, fs.fruits[i].size)
 
 		if hasCreatureCollidedWithFruit && c.hp < c.maxHP {
-			if c.exp < expForNextLvl {
-				c.exp += creatureExpIncrement
-			}
 			return true, i
 		}
 	}
@@ -171,18 +166,19 @@ func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
 	return false, -1
 }
 
-func (c *Creature) eatFood(fs *FruitSpawner, fruitIndex int) {
-	c.exp += creatureExpIncrement
-	fs.despawnFruit(fruitIndex)
+func (c *Creature) eatFood() {
+	expForNextLvl := calcExpForNextLvl(c.lvl)
+
+	if c.exp < expForNextLvl {
+		c.exp += creatureExpIncrement
+	}
+
 	c.actionState = ActionSearchingFood
-	c.targetIndex = -1
 }
 
 func (c *Creature) updateAwakenessStatus(dt float32) {
 	switch c.actionState {
 	case ActionSearchingFood:
-		fallthrough
-	case ActionEating:
 		if awakeTimerSeconds > 0 {
 			awakeTimerSeconds -= 1 * dt
 		} else {
@@ -199,7 +195,6 @@ func (c *Creature) updateAwakenessStatus(dt float32) {
 	}
 }
 
-// initial crude version (might extend later)
 func (c *Creature) sleep(dt float32) {
 	c.exp += creatureAsleepExpIncrement * dt
 
