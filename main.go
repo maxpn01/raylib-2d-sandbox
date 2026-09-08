@@ -38,19 +38,44 @@ var player = NewPlayer(
 	rl.NewVector2(300, 300),
 	rl.NewVector2(30, 30),
 	rl.Red,
-	400, 100, 100,
-)
-var fruitSpawner = NewFruitSpawner(
-	rl.NewVector2(15, 15),
-	rl.Yellow,
-	1, 20,
+	PlayerStats{
+		lvl:              1,
+		hp:               1,
+		speed:            300,
+		sprintMultiplier: 1.15,
+		maxLvl:           100,
+		maxHP:            100,
+	},
+	PlayerGrowthStats{
+		ExpPerFruit:   0.25,
+		HPPerLevel:    0.25,
+		SpeedPerLevel: 0.25,
+	},
 )
 var creature = NewCreature(
 	rl.NewVector2(windowCenter.X, windowCenter.Y),
 	rl.NewVector2(30, 30),
 	rl.Green,
-	200, 100, 100,
+	CreatureStats{
+		lvl:    1,
+		hp:     1,
+		speed:  300,
+		maxLvl: 100,
+		maxHP:  100,
+	},
+	CreatureGrowthStats{
+		ExpPerFruit:   0.25,
+		HPPerLevel:    0.25,
+		SpeedPerLevel: 0.25,
+		ExpAsleep:     0.001,
+		HPAsleep:      0.001,
+	},
 	120, 60,
+)
+var fruitSpawner = NewFruitSpawner(
+	rl.NewVector2(15, 15),
+	rl.Yellow,
+	1, 20,
 )
 
 var entities = []GameObject{gameMap, player, fruitSpawner, creature}
@@ -64,28 +89,28 @@ var playerHpText = NewHUDText(
 	hudTextSize,
 	rl.RayWhite,
 	"hp:",
-	func() float32 { return player.hp },
+	func() float32 { return player.stats.hp },
 )
 var playerLvlText = NewHUDText(
 	rl.NewVector2(130, hudTopPadding),
 	hudTextSize,
 	rl.RayWhite,
 	"lvl:",
-	func() float32 { return float32(player.lvl) },
+	func() float32 { return float32(player.stats.lvl) },
 )
 var playerExpText = NewHUDText(
 	rl.NewVector2(230, hudTopPadding),
 	hudTextSize,
 	rl.RayWhite,
 	"exp:",
-	func() float32 { return player.exp },
+	func() float32 { return player.stats.exp },
 )
 var playerSpeedText = NewHUDText(
 	rl.NewVector2(350, hudTopPadding),
 	hudTextSize,
 	rl.RayWhite,
 	"speed:",
-	func() float32 { return player.speed },
+	func() float32 { return player.stats.speed },
 )
 
 var creatureHpText = NewHUDText(
@@ -93,21 +118,21 @@ var creatureHpText = NewHUDText(
 	hudTextSize,
 	rl.RayWhite,
 	"creature hp:",
-	func() float32 { return creature.hp },
+	func() float32 { return creature.stats.hp },
 )
 var creatureLvlText = NewHUDText(
 	rl.NewVector2(float32(window.width-420), hudTopPadding),
 	hudTextSize,
 	rl.RayWhite,
 	"creature lvl:",
-	func() float32 { return float32(creature.lvl) },
+	func() float32 { return float32(creature.stats.lvl) },
 )
 var creatureExpText = NewHUDText(
 	rl.NewVector2(float32(window.width-650), hudTopPadding),
 	hudTextSize,
 	rl.RayWhite,
 	"creature exp:",
-	func() float32 { return creature.exp },
+	func() float32 { return creature.stats.exp },
 )
 
 var hud = []GameObject{
