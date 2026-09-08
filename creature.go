@@ -141,7 +141,7 @@ func (c *Creature) moveCreature(targetPos, targetSize rl.Vector2, dt float32) {
 	}
 
 	clamp(gameMap.edgePosX.start, &c.pos.X, &c.size.X, gameMap.edgePosX.end)
-	clamp(gameMap.edgePosX.start, &c.pos.Y, &c.size.Y, gameMap.edgePosY.end)
+	clamp(gameMap.edgePosY.start, &c.pos.Y, &c.size.Y, gameMap.edgePosY.end)
 }
 
 func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
