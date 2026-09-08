@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -28,18 +29,27 @@ type Creature struct {
 	maxHP float32
 
 	actionState CreatureActionState
+
+	awakeSeconds       float32
+	asleepSeconds      float32
+	awakeTimerSeconds  float32
+	asleepTimerSeconds float32
 }
 
-func NewCreature(pos, size rl.Vector2, color color.RGBA, speed, maxHP float32, maxLvl int) *Creature {
+func NewCreature(pos, size rl.Vector2, color color.RGBA, speed, maxHP float32, maxLvl int, awake, asleep float32) *Creature {
 	return &Creature{
-		pos:    pos,
-		size:   size,
-		color:  color,
-		lvl:    1,
-		maxLvl: maxLvl,
-		speed:  speed,
-		hp:     1,
-		maxHP:  maxHP,
+		pos:                pos,
+		size:               size,
+		color:              color,
+		lvl:                1,
+		maxLvl:             maxLvl,
+		speed:              speed,
+		hp:                 1,
+		maxHP:              maxHP,
+		awakeSeconds:       awake,
+		asleepSeconds:      asleep,
+		awakeTimerSeconds:  awake,
+		asleepTimerSeconds: asleep,
 	}
 }
 
@@ -49,12 +59,6 @@ const creatureSpeedIncrement = 0.25
 
 const creatureAsleepExpIncrement = 0.001
 const creatureAsleepHpIncrement = 0.001
-
-const creatureAwakeSeconds = 120
-const creatureAsleepSeconds = 60
-
-var awakeTimerSeconds float32 = creatureAwakeSeconds
-var asleepTimerSeconds float32 = creatureAsleepSeconds
 
 func (c *Creature) update(dt float32) {
 	c.updateAwakenessStatus(dt)
@@ -98,9 +102,9 @@ func (c *Creature) searchFood(fruits []Fruit, dt float32) {
 		}
 	}
 
-	c.moveCreature(closestFruitPos, closestFruitSize, dt)
+	c.move(closestFruitPos, closestFruitSize, dt)
 
-	hasCreatureCollidedWithFruit, fruitIndex := c.checkCreatureFruitCollision(fruitSpawner)
+	hasCreatureCollidedWithFruit, fruitIndex := c.checkFruitCollision(fruitSpawner)
 
 	if hasCreatureCollidedWithFruit && fruitIndex >= 0 && fruitIndex < len(fruits) {
 		fruitSpawner.despawnFruit(fruitIndex)
@@ -108,47 +112,24 @@ func (c *Creature) searchFood(fruits []Fruit, dt float32) {
 	}
 }
 
-func (c *Creature) moveCreature(targetPos, targetSize rl.Vector2, dt float32) {
-	move := rl.Vector2{}
-
-	creatureCenterX := c.pos.X + c.size.X/2
-	creatureCenterY := c.pos.Y + c.size.Y/2
-	targetCenterX := targetPos.X + targetSize.X/2
-	targetCenterY := targetPos.Y + targetSize.Y/2
-
-	step := c.speed * dt
-
-	diffX := creatureCenterX - targetCenterX
-	diffY := creatureCenterY - targetCenterY
-
-	if diffX > step {
-		move.X = -1
-	} else if diffX < -step {
-		move.X = 1
-	}
-	if diffY > step {
-		move.Y = -1
-	} else if diffY < -step {
-		move.Y = 1
-	}
-
-	// normalize the diagonal speed
-	if move.X != 0 || move.Y != 0 {
-		move = rl.Vector2Normalize(move)
-
-		c.pos.X += move.X * c.speed * dt
-		c.pos.Y += move.Y * c.speed * dt
-	}
+func (c *Creature) move(targetPos, targetSize rl.Vector2, dt float32) {
+	// Align our center with the fruit's center, accounting for their different sizes.
+	target := rl.NewVector2(
+		targetPos.X+targetSize.X/2-c.size.X/2,
+		targetPos.Y+targetSize.Y/2-c.size.Y/2,
+	)
+	// Travel at most speed * dt, stopping at the target rather than overshooting it.
+	c.pos = rl.Vector2MoveTowards(c.pos, target, c.speed*dt)
 
 	clamp(gameMap.edgePosX.start, &c.pos.X, &c.size.X, gameMap.edgePosX.end)
 	clamp(gameMap.edgePosY.start, &c.pos.Y, &c.size.Y, gameMap.edgePosY.end)
 }
 
-func (c *Creature) checkCreatureFruitCollision(fs *FruitSpawner) (bool, int) {
-	for i := len(fs.fruits) - 1; i >= 0; i-- {
-		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, fs.fruits[i].pos, fs.fruits[i].size)
+func (c *Creature) checkFruitCollision(fs *FruitSpawner) (bool, int) {
+	for i, v := range slices.Backward(fs.fruits) {
+		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, v.pos, v.size)
 
-		if hasCreatureCollidedWithFruit && c.hp < c.maxHP {
+		if hasCreatureCollidedWithFruit {
 			return true, i
 		}
 	}
@@ -164,18 +145,18 @@ func (c *Creature) eatFood() {
 func (c *Creature) updateAwakenessStatus(dt float32) {
 	switch c.actionState {
 	case ActionSearchingFood:
-		if awakeTimerSeconds > 0 {
-			awakeTimerSeconds -= 1 * dt
+		if c.awakeTimerSeconds > 0 {
+			c.awakeTimerSeconds -= 1 * dt
 		} else {
 			c.actionState = ActionSleeping
-			asleepTimerSeconds = creatureAsleepSeconds
+			c.asleepTimerSeconds = c.asleepSeconds
 		}
 	case ActionSleeping:
-		if asleepTimerSeconds > 0 {
-			asleepTimerSeconds -= 1 * dt
+		if c.asleepTimerSeconds > 0 {
+			c.asleepTimerSeconds -= 1 * dt
 		} else {
 			c.actionState = ActionSearchingFood
-			awakeTimerSeconds = creatureAwakeSeconds
+			c.awakeTimerSeconds = c.awakeSeconds
 		}
 	}
 }
@@ -184,7 +165,7 @@ func (c *Creature) sleep(dt float32) {
 	c.exp += creatureAsleepExpIncrement * dt
 
 	if c.hp < c.maxHP {
-		c.hp += creatureAsleepHpIncrement * dt
+		c.hp = min(c.hp+creatureAsleepHpIncrement*dt, c.maxHP)
 	}
 }
 

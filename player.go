@@ -39,8 +39,8 @@ var playerHpIncrement float32 = 0.25
 var playerSpeedIncrement float32 = 0.25
 
 func (p *Player) update(dt float32) {
-	p.movePlayer(dt)
-	p.handlePlayerFruitCollision(fruitSpawner)
+	p.move(dt)
+	p.handleFruitCollision(fruitSpawner)
 	p.handleLevelUp()
 }
 
@@ -48,7 +48,7 @@ func (p *Player) draw() {
 	rl.DrawRectangleV(p.pos, p.size, p.color)
 }
 
-func (p *Player) movePlayer(dt float32) {
+func (p *Player) move(dt float32) {
 	move := rl.Vector2{}
 
 	if rl.IsKeyDown(rl.KeyW) {
@@ -81,7 +81,7 @@ func (p *Player) movePlayer(dt float32) {
 	clamp(gameMap.edgePosY.start, &p.pos.Y, &p.size.Y, gameMap.edgePosY.end)
 }
 
-func (p *Player) handlePlayerFruitCollision(fs *FruitSpawner) {
+func (p *Player) handleFruitCollision(fs *FruitSpawner) {
 	for i := len(fs.fruits) - 1; i >= 0; i-- {
 		hasPlayerCollidedWithFruit := checkCollisions(p.pos, p.size, fs.fruits[i].pos, fs.fruits[i].size)
 

@@ -32,7 +32,7 @@ func NewHUDText(pos rl.Vector2, fontSize int32, color color.RGBA, text string, g
 		Text: Text{
 			pos:      pos,
 			fontSize: fontSize,
-			color:    rl.RayWhite,
+			color:    color,
 		},
 		label:        text,
 		getStatValue: getValue,

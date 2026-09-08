@@ -14,26 +14,27 @@ type Fruit struct {
 }
 
 type FruitSpawner struct {
-	fruits             []Fruit
-	fruitSize          rl.Vector2
-	fruitColor         color.RGBA
-	fruitSpawnTimer    float32
-	fruitSpawnInterval int
-	maxFruits          int
+	fruits []Fruit
+
+	fruitSize  rl.Vector2
+	fruitColor color.RGBA
+
+	fruitSpawnTimer              float32
+	fruitSpawnInterval           int
+	fruitSpawnIntervalMaxSeconds int
+
+	maxFruits int
 }
 
-var fruitSpawnIntervalMaxSeconds int
-
 func NewFruitSpawner(size rl.Vector2, color color.RGBA, spawnIntervalMaxSeconds int, maxFruits int) *FruitSpawner {
-	fruitSpawnIntervalMaxSeconds = spawnIntervalMaxSeconds
-
 	return &FruitSpawner{
-		fruits:             []Fruit{},
-		fruitSize:          size,
-		fruitColor:         color,
-		fruitSpawnTimer:    0,
-		fruitSpawnInterval: rand.Intn(spawnIntervalMaxSeconds),
-		maxFruits:          maxFruits,
+		fruits:                       []Fruit{},
+		fruitSize:                    size,
+		fruitColor:                   color,
+		fruitSpawnTimer:              0,
+		fruitSpawnInterval:           1 + rand.Intn(spawnIntervalMaxSeconds),
+		fruitSpawnIntervalMaxSeconds: spawnIntervalMaxSeconds,
+		maxFruits:                    maxFruits,
 	}
 }
 
@@ -63,7 +64,7 @@ func spawnFruit(fs *FruitSpawner, dt float32) {
 		})
 
 		fs.fruitSpawnTimer = 0
-		fs.fruitSpawnInterval = 1 + rand.Intn(fruitSpawnIntervalMaxSeconds)
+		fs.fruitSpawnInterval = 1 + rand.Intn(fs.fruitSpawnIntervalMaxSeconds)
 	}
 }
 
