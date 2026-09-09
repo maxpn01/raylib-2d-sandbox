@@ -20,7 +20,6 @@ type PlayerStats struct {
 }
 
 type PlayerGrowthStats struct {
-	ExpPerFruit   float32
 	HPPerLevel    float32
 	SpeedPerLevel float32
 }
@@ -33,15 +32,24 @@ type Player struct {
 	stats PlayerStats
 
 	growth PlayerGrowthStats
+
+	nutritionalFactor float32
 }
 
-func NewPlayer(pos, size rl.Vector2, color color.RGBA, stats PlayerStats, growth PlayerGrowthStats) *Player {
+func NewPlayer(
+	pos, size rl.Vector2,
+	color color.RGBA,
+	stats PlayerStats,
+	growth PlayerGrowthStats,
+	nutritionalFactor float32,
+) *Player {
 	return &Player{
-		pos:    pos,
-		size:   size,
-		color:  color,
-		stats:  stats,
-		growth: growth,
+		pos:               pos,
+		size:              size,
+		color:             color,
+		stats:             stats,
+		growth:            growth,
+		nutritionalFactor: nutritionalFactor,
 	}
 }
 
@@ -93,10 +101,18 @@ func (p *Player) handleFruitCollision(fs *FruitSpawner) {
 		hasPlayerCollidedWithFruit := checkCollisions(p.pos, p.size, v.pos, v.size)
 
 		if hasPlayerCollidedWithFruit {
-			p.stats.exp += p.growth.ExpPerFruit
+			p.eatFood(v.nutritionalValue)
 			fs.despawnFruit(i)
 		}
 	}
+}
+
+func (p *Player) nutritionalValue() float32 {
+	return p.nutritionalFactor * float32(p.stats.lvl)
+}
+
+func (p *Player) eatFood(nutrition float32) {
+	p.stats.exp += nutrition
 }
 
 func (p *Player) handleLevelUp() {

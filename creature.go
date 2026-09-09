@@ -27,8 +27,6 @@ type CreatureStats struct {
 }
 
 type CreatureGrowthStats struct {
-	ExpPerFruit float32
-
 	HPPerLevel    float32
 	SpeedPerLevel float32
 
@@ -51,15 +49,26 @@ type Creature struct {
 	asleepSeconds      float32
 	awakeTimerSeconds  float32
 	asleepTimerSeconds float32
+
+	nutritionalFactor float32
 }
 
-func NewCreature(pos, size rl.Vector2, color color.RGBA, stats CreatureStats, growth CreatureGrowthStats, awake, asleep float32) *Creature {
+func NewCreature(
+	pos,
+	size rl.Vector2,
+	color color.RGBA,
+	stats CreatureStats,
+	growth CreatureGrowthStats,
+	nutritionalFactor float32,
+	awake, asleep float32,
+) *Creature {
 	return &Creature{
 		pos:                pos,
 		size:               size,
 		color:              color,
 		stats:              stats,
 		growth:             growth,
+		nutritionalFactor:  nutritionalFactor,
 		awakeSeconds:       awake,
 		asleepSeconds:      asleep,
 		awakeTimerSeconds:  awake,
@@ -74,7 +83,7 @@ func (c *Creature) update(dt float32) {
 	case ActionSearchingFood:
 		c.searchFood(fruitSpawner, dt)
 	case ActionEating:
-		c.eatFood()
+		c.actionState = ActionSearchingFood
 	case ActionSleeping:
 		c.sleep(dt)
 	}
@@ -114,8 +123,8 @@ func (c *Creature) searchFood(fs *FruitSpawner, dt float32) {
 	hasCreatureCollidedWithFruit, fruitIndex := c.checkFruitCollision(fs)
 
 	if hasCreatureCollidedWithFruit && fruitIndex >= 0 && fruitIndex < len(fs.fruits) {
+		c.eatFood(fs.fruits[fruitIndex].nutritionalValue)
 		fs.despawnFruit(fruitIndex)
-		c.actionState = ActionEating
 	}
 }
 
@@ -144,9 +153,13 @@ func (c *Creature) checkFruitCollision(fs *FruitSpawner) (bool, int) {
 	return false, -1
 }
 
-func (c *Creature) eatFood() {
-	c.stats.exp += c.growth.ExpPerFruit
-	c.actionState = ActionSearchingFood
+func (c *Creature) nutritionalValue() float32 {
+	return c.nutritionalFactor * float32(c.stats.lvl)
+}
+
+func (c *Creature) eatFood(nutrition float32) {
+	c.stats.exp += nutrition
+	c.actionState = ActionEating
 }
 
 func (c *Creature) updateAwakenessStatus(dt float32) {

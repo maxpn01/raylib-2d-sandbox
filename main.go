@@ -42,15 +42,15 @@ var player = NewPlayer(
 		lvl:              1,
 		hp:               1,
 		speed:            300,
-		sprintMultiplier: 1.15,
+		sprintMultiplier: 2,
 		maxLvl:           100,
 		maxHP:            100,
 	},
 	PlayerGrowthStats{
-		ExpPerFruit:   0.25,
 		HPPerLevel:    0.25,
 		SpeedPerLevel: 0.25,
 	},
+	1,
 )
 var creature = NewCreature(
 	rl.NewVector2(windowCenter.X, windowCenter.Y),
@@ -64,17 +64,18 @@ var creature = NewCreature(
 		maxHP:  100,
 	},
 	CreatureGrowthStats{
-		ExpPerFruit:   0.25,
 		HPPerLevel:    0.25,
 		SpeedPerLevel: 0.25,
 		ExpAsleep:     0.001,
 		HPAsleep:      0.001,
 	},
+	1,
 	120, 60,
 )
 var fruitSpawner = NewFruitSpawner(
 	rl.NewVector2(15, 15),
 	rl.Yellow,
+	0.25,
 	1, 20,
 )
 

@@ -11,6 +11,8 @@ type Fruit struct {
 	pos   rl.Vector2
 	size  rl.Vector2
 	color color.RGBA
+
+	nutritionalValue float32
 }
 
 type FruitSpawner struct {
@@ -24,13 +26,21 @@ type FruitSpawner struct {
 	fruitSpawnIntervalMaxSeconds int
 
 	maxFruits int
+
+	nutritionalValue float32
 }
 
-func NewFruitSpawner(size rl.Vector2, color color.RGBA, spawnIntervalMaxSeconds int, maxFruits int) *FruitSpawner {
+func NewFruitSpawner(
+	size rl.Vector2,
+	color color.RGBA,
+	nutritionalValue float32,
+	spawnIntervalMaxSeconds int,
+	maxFruits int) *FruitSpawner {
 	return &FruitSpawner{
 		fruits:                       []Fruit{},
 		fruitSize:                    size,
 		fruitColor:                   color,
+		nutritionalValue:             nutritionalValue,
 		fruitSpawnTimer:              0,
 		fruitSpawnInterval:           1 + rand.Intn(spawnIntervalMaxSeconds),
 		fruitSpawnIntervalMaxSeconds: spawnIntervalMaxSeconds,
@@ -58,9 +68,10 @@ func spawnFruit(fs *FruitSpawner, dt float32) {
 		fruitRandY := randomBetween(y.start, y.end-fs.fruitSize.Y)
 
 		fs.fruits = append(fs.fruits, Fruit{
-			pos:   rl.NewVector2(fruitRandX, fruitRandY),
-			size:  fs.fruitSize,
-			color: fs.fruitColor,
+			pos:              rl.NewVector2(fruitRandX, fruitRandY),
+			size:             fs.fruitSize,
+			color:            fs.fruitColor,
+			nutritionalValue: fs.nutritionalValue,
 		})
 
 		fs.fruitSpawnTimer = 0
