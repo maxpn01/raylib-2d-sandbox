@@ -61,6 +61,7 @@ func (g *Game) run() {
 		}
 
 		if !menuOpen {
+			g.world.player.readInput()
 			g.world.update(dt)
 			if g.world.player.isDeadFlag {
 				g.restart()

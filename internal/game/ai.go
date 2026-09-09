@@ -115,8 +115,8 @@ func (ai *AI) chooseFoodTarget(fs *FruitSpawner, p *Player) (targetPos rl.Vector
 			return p.pos, p.size, true
 		}
 
-		playerDistance := findSquaredEuclideanDistance(ai.pos, p.pos)
-		closestFruitDistance := findSquaredEuclideanDistance(ai.pos, closestFruit.pos)
+		playerDistance := ai.distanceTo(p.pos, p.size)
+		closestFruitDistance := ai.distanceTo(closestFruit.pos, closestFruit.size)
 		playerIsCloser := playerDistance <= closestFruitDistance
 		if playerIsCloser {
 			return p.pos, p.size, true
@@ -136,10 +136,10 @@ func (ai *AI) findClosestFruit(fs *FruitSpawner) (Fruit, bool) {
 	}
 
 	closestFruit := fs.fruits[0]
-	closestFruitDistance := findSquaredEuclideanDistance(ai.pos, closestFruit.pos)
+	closestFruitDistance := ai.distanceTo(closestFruit.pos, closestFruit.size)
 
 	for _, fruit := range fs.fruits[1:] {
-		distance := findSquaredEuclideanDistance(ai.pos, fruit.pos)
+		distance := ai.distanceTo(fruit.pos, fruit.size)
 		if distance <= closestFruitDistance {
 			closestFruitDistance = distance
 			closestFruit = fruit
@@ -147,6 +147,10 @@ func (ai *AI) findClosestFruit(fs *FruitSpawner) (Fruit, bool) {
 	}
 
 	return closestFruit, true
+}
+
+func (ai *AI) distanceTo(pos, size rl.Vector2) float32 {
+	return findSquaredEuclideanDistance(rectCenter(ai.pos, ai.size), rectCenter(pos, size))
 }
 
 func (ai *AI) canEatPlayer(p *Player) bool {
@@ -209,17 +213,15 @@ func (ai *AI) eatFood(nutrition float32) {
 
 func (ai *AI) updateAwakenessStatus(dt float32) {
 	switch ai.actionState {
-	case ActionSearchingFood:
-		if ai.awakeTimerSeconds > 0 {
-			ai.awakeTimerSeconds -= 1 * dt
-		} else {
+	case ActionSearchingFood, ActionEating:
+		ai.awakeTimerSeconds -= dt
+		if ai.awakeTimerSeconds <= 0 {
 			ai.actionState = ActionSleeping
 			ai.asleepTimerSeconds = ai.asleepSeconds
 		}
 	case ActionSleeping:
-		if ai.asleepTimerSeconds > 0 {
-			ai.asleepTimerSeconds -= 1 * dt
-		} else {
+		ai.asleepTimerSeconds -= dt
+		if ai.asleepTimerSeconds <= 0 {
 			ai.actionState = ActionSearchingFood
 			ai.awakeTimerSeconds = ai.awakeSeconds
 		}

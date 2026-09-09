@@ -29,8 +29,8 @@ func NewWorld(aiSpawn rl.Vector2) *World {
 		PlayerStats{
 			lvl:              1,
 			hp:               1,
-			speed:            400,
-			sprintMultiplier: 2,
+			speed:            500,
+			sprintMultiplier: 1.15,
 			maxLvl:           100,
 			maxHP:            100,
 		},
@@ -47,7 +47,7 @@ func NewWorld(aiSpawn rl.Vector2) *World {
 		AIStats{
 			lvl:    1,
 			hp:     1,
-			speed:  400,
+			speed:  500,
 			maxLvl: 100,
 			maxHP:  100,
 		},
@@ -71,12 +71,20 @@ func NewWorld(aiSpawn rl.Vector2) *World {
 	return w
 }
 
+const maxSimulationStep float32 = 1.0 / 120
+
 func (w *World) update(dt float32) {
-	for _, entity := range w.entities {
-		if w.player.isDeadFlag {
-			break
+	for dt > 0 && !w.player.isDeadFlag {
+		step := min(dt, maxSimulationStep)
+
+		for _, entity := range w.entities {
+			if w.player.isDeadFlag {
+				return
+			}
+			entity.update(w, step)
 		}
-		entity.update(w, dt)
+
+		dt -= step
 	}
 }
 

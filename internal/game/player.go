@@ -24,7 +24,13 @@ type PlayerGrowthStats struct {
 	SpeedPerLevel float32
 }
 
+type PlayerInput struct {
+	Direction rl.Vector2
+	Sprint    bool
+}
+
 type Player struct {
+	input PlayerInput
 	pos   rl.Vector2
 	size  rl.Vector2
 	color color.RGBA
@@ -66,24 +72,29 @@ func (p *Player) draw() {
 	rl.DrawRectangleV(p.pos, p.size, p.color)
 }
 
-func (p *Player) move(gameMap *Map, dt float32) {
-	move := rl.Vector2{}
-
+// Read held controls once per rendered frame; every simulation step uses them.
+func (p *Player) readInput() {
+	input := PlayerInput{Sprint: rl.IsKeyDown(rl.KeyLeftShift)}
 	if rl.IsKeyDown(rl.KeyW) {
-		move.Y -= 1
+		input.Direction.Y -= 1
 	}
 	if rl.IsKeyDown(rl.KeyS) {
-		move.Y += 1
+		input.Direction.Y += 1
 	}
 	if rl.IsKeyDown(rl.KeyA) {
-		move.X -= 1
+		input.Direction.X -= 1
 	}
 	if rl.IsKeyDown(rl.KeyD) {
-		move.X += 1
+		input.Direction.X += 1
 	}
+	p.input = input
+}
 
+func (p *Player) move(gameMap *Map, dt float32) {
+	move := p.input.Direction
 	speed := p.stats.speed
-	if rl.IsKeyDown(rl.KeyLeftShift) {
+
+	if p.input.Sprint {
 		speed *= p.stats.sprintMultiplier
 	}
 

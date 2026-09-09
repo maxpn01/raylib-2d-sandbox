@@ -37,3 +37,7 @@ func calcExpForNextLvl(lvl int) float32 {
 func randomBetween[T int | float32](min, max T) T {
 	return min + T(rand.Intn(int(max-min)+1))
 }
+
+func rectCenter(pos, size rl.Vector2) rl.Vector2 {
+	return rl.NewVector2(pos.X+size.X/2, pos.Y+size.Y/2)
+}
