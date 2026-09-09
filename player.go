@@ -34,6 +34,8 @@ type Player struct {
 	growth PlayerGrowthStats
 
 	nutritionalFactor float32
+
+	isDeadFlag bool
 }
 
 func NewPlayer(
@@ -50,12 +52,13 @@ func NewPlayer(
 		stats:             stats,
 		growth:            growth,
 		nutritionalFactor: nutritionalFactor,
+		isDeadFlag:        false,
 	}
 }
 
-func (p *Player) update(dt float32) {
-	p.move(dt)
-	p.handleFruitCollision(fruitSpawner)
+func (p *Player) update(w *World, dt float32) {
+	p.move(w.gameMap, dt)
+	p.handleFruitCollision(w.fruitSpawner)
 	p.handleLevelUp()
 }
 
@@ -63,7 +66,7 @@ func (p *Player) draw() {
 	rl.DrawRectangleV(p.pos, p.size, p.color)
 }
 
-func (p *Player) move(dt float32) {
+func (p *Player) move(gameMap *Map, dt float32) {
 	move := rl.Vector2{}
 
 	if rl.IsKeyDown(rl.KeyW) {
@@ -113,6 +116,10 @@ func (p *Player) nutritionalValue() float32 {
 
 func (p *Player) eatFood(nutrition float32) {
 	p.stats.exp += nutrition
+}
+
+func (p *Player) markPlayerDeath() {
+	p.isDeadFlag = true
 }
 
 func (p *Player) handleLevelUp() {

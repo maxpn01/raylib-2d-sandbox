@@ -76,12 +76,12 @@ func NewCreature(
 	}
 }
 
-func (c *Creature) update(dt float32) {
+func (c *Creature) update(w *World, dt float32) {
 	c.updateAwakenessStatus(dt)
 
 	switch c.actionState {
 	case ActionSearchingFood:
-		c.searchFood(fruitSpawner, dt)
+		c.searchFood(w.fruitSpawner, w.player, w.gameMap, dt)
 	case ActionEating:
 		c.actionState = ActionSearchingFood
 	case ActionSleeping:
@@ -95,7 +95,7 @@ func (c *Creature) draw() {
 	rl.DrawRectangleV(c.pos, c.size, c.color)
 }
 
-func (c *Creature) searchFood(fs *FruitSpawner, dt float32) {
+func (c *Creature) searchFood(fs *FruitSpawner, p *Player, gameMap *Map, dt float32) {
 	if len(fs.fruits) == 0 {
 		return
 	}
@@ -118,7 +118,15 @@ func (c *Creature) searchFood(fs *FruitSpawner, dt float32) {
 		}
 	}
 
-	c.move(closestFruitPos, closestFruitSize, dt)
+	var playerDistance float32 = findSquaredEuclideanDistance(c.pos, p.pos)
+	var playerPos rl.Vector2 = p.pos
+	var playerSize rl.Vector2 = p.size
+
+	if playerDistance <= closestFruitDistance && c.stats.hp > p.stats.hp {
+		c.move(playerPos, playerSize, gameMap, dt)
+	} else {
+		c.move(closestFruitPos, closestFruitSize, gameMap, dt)
+	}
 
 	hasCreatureCollidedWithFruit, fruitIndex := c.checkFruitCollision(fs)
 
@@ -126,9 +134,20 @@ func (c *Creature) searchFood(fs *FruitSpawner, dt float32) {
 		c.eatFood(fs.fruits[fruitIndex].nutritionalValue)
 		fs.despawnFruit(fruitIndex)
 	}
+
+	hasCreatureCollidedWithPlayer := checkCollisions(c.pos, c.size, p.pos, p.size)
+
+	if hasCreatureCollidedWithPlayer {
+		if c.stats.hp > p.stats.hp {
+			c.eatFood(p.nutritionalValue())
+			p.markPlayerDeath()
+		} else {
+			// kill creature
+		}
+	}
 }
 
-func (c *Creature) move(targetPos, targetSize rl.Vector2, dt float32) {
+func (c *Creature) move(targetPos, targetSize rl.Vector2, gameMap *Map, dt float32) {
 	// Align our center with the fruit's center, accounting for their different sizes.
 	target := rl.NewVector2(
 		targetPos.X+targetSize.X/2-c.size.X/2,
@@ -142,6 +161,18 @@ func (c *Creature) move(targetPos, targetSize rl.Vector2, dt float32) {
 }
 
 func (c *Creature) checkFruitCollision(fs *FruitSpawner) (bool, int) {
+	for i, v := range slices.Backward(fs.fruits) {
+		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, v.pos, v.size)
+
+		if hasCreatureCollidedWithFruit {
+			return true, i
+		}
+	}
+
+	return false, -1
+}
+
+func (c *Creature) checkPlayerCollision(fs *FruitSpawner) (bool, int) {
 	for i, v := range slices.Backward(fs.fruits) {
 		hasCreatureCollidedWithFruit := checkCollisions(c.pos, c.size, v.pos, v.size)
 

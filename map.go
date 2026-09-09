@@ -55,7 +55,7 @@ func NewMap(size, cellSize rl.Vector2, bgColor, accentColor color.RGBA) *Map {
 	}
 }
 
-func (m *Map) update(dt float32) {}
+func (m *Map) update(w *World, dt float32) {}
 
 func (m *Map) draw() {
 	colStart, rowStart, colEnd, rowEnd := m.visibleCellRange()

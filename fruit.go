@@ -48,8 +48,8 @@ func NewFruitSpawner(
 	}
 }
 
-func (fs *FruitSpawner) update(dt float32) {
-	spawnFruit(fs, dt)
+func (fs *FruitSpawner) update(w *World, dt float32) {
+	spawnFruit(fs, w.gameMap, dt)
 }
 
 func (fs *FruitSpawner) draw() {
@@ -58,7 +58,7 @@ func (fs *FruitSpawner) draw() {
 	}
 }
 
-func spawnFruit(fs *FruitSpawner, dt float32) {
+func spawnFruit(fs *FruitSpawner, gameMap *Map, dt float32) {
 	fs.fruitSpawnTimer += dt
 
 	if fs.fruitSpawnTimer >= float32(fs.fruitSpawnInterval) && len(fs.fruits) < fs.maxFruits {
