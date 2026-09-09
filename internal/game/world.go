@@ -1,4 +1,4 @@
-package main
+package game
 
 import rl "github.com/gen2brain/raylib-go/raylib"
 
@@ -42,7 +42,7 @@ func NewWorld() *World {
 		1,
 	)
 	w.creature = NewCreature(
-		rl.NewVector2(windowCenter.X, windowCenter.Y),
+		rl.NewVector2(window.getWindowCenter().X, window.getWindowCenter().Y),
 		rl.NewVector2(30, 30),
 		rl.Green,
 		CreatureStats{
