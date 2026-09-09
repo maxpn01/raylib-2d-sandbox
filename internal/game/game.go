@@ -4,34 +4,51 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var window = NewWindow(
-	1440,
-	820,
-	"2D sandbox",
-	rl.Black,
-)
-
-var camera = rl.NewCamera2D(window.getWindowCenter(), rl.Vector2{}, 0, 1)
-
-var menu = NewMenu([]*MenuButton{
-	NewMenuButton("play", ActionPlay),
-	NewMenuButton("exit", ActionExit),
-}, 30, rl.Black)
-
-var world *World
-
-func restartGame() {
-	world = NewWorld()
+type Game struct {
+	window *Window
+	camera rl.Camera2D
+	menu   *Menu
+	world  *World
+	hud    *HUD
 }
 
-func RunGame() {
-	rl.InitWindow(int32(window.width), int32(window.height), window.title)
-	defer rl.CloseWindow()
+func NewGame() *Game {
+	window := NewWindow(
+		1440,
+		820,
+		"2D sandbox",
+		rl.Black,
+	)
 
-	rl.SetTargetFPS(60)
-	rl.SetExitKey(rl.KeyNull)
+	camera := rl.NewCamera2D(window.getWindowCenter(), rl.Vector2{}, 0, 1)
 
-	restartGame()
+	menu := NewMenu([]*MenuButton{
+		NewMenuButton("play", ActionPlay),
+		NewMenuButton("exit", ActionExit),
+	}, 30, rl.Black)
+
+	world := NewWorld(window.getWindowCenter())
+
+	hud := NewHUD(world, window)
+
+	return &Game{
+		window: window,
+		camera: camera,
+		menu:   menu,
+		world:  world,
+		hud:    hud,
+	}
+}
+
+func Run() {
+	NewGame().run()
+}
+
+func (g *Game) run() {
+	g.window.initWindow()
+	defer g.window.close()
+
+	g.cameraFollowPlayer()
 
 	menuOpen := true
 	exitRequested := false
@@ -44,39 +61,53 @@ func RunGame() {
 		}
 
 		if !menuOpen {
-			world.update(dt)
-			if world.player.isDeadFlag {
-				restartGame()
+			g.world.update(dt)
+			if g.world.player.isDeadFlag {
+				g.restart()
 			}
 
-			camera.Target = rl.NewVector2(
-				world.player.pos.X+world.player.size.X/2,
-				world.player.pos.Y+world.player.size.Y/2,
-			)
+			g.cameraFollowPlayer()
 
-			world.hud.update(dt)
+			g.hud.update(dt)
 		}
 
 		rl.BeginDrawing()
-		rl.ClearBackground(window.bgColor)
+		rl.ClearBackground(g.window.bgColor)
 
 		if menuOpen {
-			switch menu.draw() {
+			switch g.menu.draw() {
 			case ActionPlay:
 				menuOpen = false
 			case ActionExit:
 				exitRequested = true
 			}
 		} else {
-			rl.BeginMode2D(camera)
+			rl.BeginMode2D(g.camera)
 
-			world.draw()
+			g.world.draw(RenderContext{
+				Camera:       g.camera,
+				WindowWidth:  g.window.width,
+				WindowHeight: g.window.height,
+			})
 
 			rl.EndMode2D()
 
-			world.hud.draw()
+			g.hud.draw()
 		}
 
 		rl.EndDrawing()
 	}
+}
+
+func (g *Game) restart() {
+	g.world = NewWorld(g.window.getWindowCenter())
+	g.hud = NewHUD(g.world, g.window)
+	g.cameraFollowPlayer()
+}
+
+func (g *Game) cameraFollowPlayer() {
+	g.camera.Target = rl.NewVector2(
+		g.world.player.pos.X+g.world.player.size.X/2,
+		g.world.player.pos.Y+g.world.player.size.Y/2,
+	)
 }

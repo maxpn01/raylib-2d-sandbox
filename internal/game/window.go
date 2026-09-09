@@ -7,19 +7,30 @@ import (
 )
 
 type Window struct {
-	width   uint16
-	height  uint16
+	width   int32
+	height  int32
 	title   string
 	bgColor color.RGBA
 }
 
-func NewWindow(width, height uint16, title string, bgColor color.RGBA) *Window {
+func NewWindow(width, height int32, title string, bgColor color.RGBA) *Window {
 	return &Window{
 		width:   width,
 		height:  height,
 		title:   title,
 		bgColor: bgColor,
 	}
+}
+
+func (w *Window) initWindow() {
+	rl.InitWindow(w.width, w.height, w.title)
+
+	rl.SetTargetFPS(60)
+	rl.SetExitKey(rl.KeyNull)
+}
+
+func (w *Window) close() {
+	rl.CloseWindow()
 }
 
 func (w *Window) getWindowCenter() rl.Vector2 {

@@ -15,8 +15,6 @@ type Text struct {
 	fontSize int32
 }
 
-func (t *Text) update(dt float32) {}
-
 func (t *Text) draw() {
 	rl.DrawText(t.text, int32(t.pos.X), int32(t.pos.Y), t.fontSize, t.color)
 }
@@ -47,56 +45,56 @@ type HUD struct {
 	texts []*HUDText
 }
 
-func NewHUD(w *World) *HUD {
+func NewHUD(world *World, window *Window) *HUD {
 	playerHpText := NewHUDText(
 		rl.NewVector2(30, 20),
 		22,
 		rl.RayWhite,
 		"hp:",
-		func() float32 { return w.player.stats.hp },
+		func() float32 { return world.player.stats.hp },
 	)
 	playerLvlText := NewHUDText(
 		rl.NewVector2(130, 20),
 		22,
 		rl.RayWhite,
 		"lvl:",
-		func() float32 { return float32(w.player.stats.lvl) },
+		func() float32 { return float32(world.player.stats.lvl) },
 	)
 	playerExpText := NewHUDText(
 		rl.NewVector2(230, 20),
 		22,
 		rl.RayWhite,
 		"exp:",
-		func() float32 { return w.player.stats.exp },
+		func() float32 { return world.player.stats.exp },
 	)
 	playerSpeedText := NewHUDText(
 		rl.NewVector2(350, 20),
 		22,
 		rl.RayWhite,
 		"speed:",
-		func() float32 { return w.player.stats.speed },
+		func() float32 { return world.player.stats.speed },
 	)
 
-	creatureHpText := NewHUDText(
+	aiHpText := NewHUDText(
 		rl.NewVector2(float32(window.width-210), 20),
 		22,
 		rl.RayWhite,
-		"creature hp:",
-		func() float32 { return w.creature.stats.hp },
+		"ai hp:",
+		func() float32 { return world.ai.stats.hp },
 	)
-	creatureLvlText := NewHUDText(
+	aiLvlText := NewHUDText(
 		rl.NewVector2(float32(window.width-420), 20),
 		22,
 		rl.RayWhite,
-		"creature lvl:",
-		func() float32 { return float32(w.creature.stats.lvl) },
+		"ai lvl:",
+		func() float32 { return float32(world.ai.stats.lvl) },
 	)
-	creatureExpText := NewHUDText(
+	aiExpText := NewHUDText(
 		rl.NewVector2(float32(window.width-650), 20),
 		22,
 		rl.RayWhite,
-		"creature exp:",
-		func() float32 { return w.creature.stats.exp },
+		"ai exp:",
+		func() float32 { return world.ai.stats.exp },
 	)
 
 	h := &HUD{texts: []*HUDText{
@@ -104,9 +102,9 @@ func NewHUD(w *World) *HUD {
 		playerLvlText,
 		playerExpText,
 		playerSpeedText,
-		creatureHpText,
-		creatureLvlText,
-		creatureExpText,
+		aiHpText,
+		aiLvlText,
+		aiExpText,
 	}}
 	h.update(0)
 	return h

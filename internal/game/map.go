@@ -55,10 +55,8 @@ func NewMap(size, cellSize rl.Vector2, bgColor, accentColor color.RGBA) *Map {
 	}
 }
 
-func (m *Map) update(w *World, dt float32) {}
-
-func (m *Map) draw() {
-	colStart, rowStart, colEnd, rowEnd := m.visibleCellRange()
+func (m *Map) draw(ctx RenderContext) {
+	colStart, rowStart, colEnd, rowEnd := m.visibleCellRange(ctx.Camera, ctx.WindowWidth, ctx.WindowHeight)
 	for row := rowStart; row < rowEnd; row++ {
 		for col := colStart; col < colEnd; col++ {
 			cell := m.cells[row][col]
@@ -79,7 +77,7 @@ func (m *Map) draw() {
 	Then divide by cell size → floor for the inclusive start index, ceil for the exclusive end index →
  	clamp to map bounds → loop only that sub-rectangle.
 */
-func (m *Map) visibleCellRange() (colStart, rowStart, colEnd, rowEnd int) {
+func (m *Map) visibleCellRange(camera rl.Camera2D, windowWidth, windowHeight int32) (colStart, rowStart, colEnd, rowEnd int) {
 	if camera.Rotation != 0 {
 		return 0, 0, int(m.sizeInCells.X), int(m.sizeInCells.Y)
 	}
@@ -89,8 +87,8 @@ func (m *Map) visibleCellRange() (colStart, rowStart, colEnd, rowEnd int) {
 		zoom = 1
 	}
 
-	screenW := float32(window.width)
-	screenH := float32(window.height)
+	screenW := float32(windowWidth)
+	screenH := float32(windowHeight)
 
 	worldMinX := camera.Target.X - camera.Offset.X/zoom
 	worldMinY := camera.Target.Y - camera.Offset.Y/zoom

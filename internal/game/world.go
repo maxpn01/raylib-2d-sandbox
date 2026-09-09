@@ -11,12 +11,11 @@ type World struct {
 	gameMap      *Map
 	player       *Player
 	fruitSpawner *FruitSpawner
-	creature     *Creature
+	ai           *AI
 	entities     []GameObject
-	hud          *HUD
 }
 
-func NewWorld() *World {
+func NewWorld(aiSpawn rl.Vector2) *World {
 	w := &World{}
 	w.gameMap = NewMap(
 		rl.NewVector2(200, 200),
@@ -30,7 +29,7 @@ func NewWorld() *World {
 		PlayerStats{
 			lvl:              1,
 			hp:               1,
-			speed:            300,
+			speed:            400,
 			sprintMultiplier: 2,
 			maxLvl:           100,
 			maxHP:            100,
@@ -41,18 +40,18 @@ func NewWorld() *World {
 		},
 		1,
 	)
-	w.creature = NewCreature(
-		rl.NewVector2(window.getWindowCenter().X, window.getWindowCenter().Y),
+	w.ai = NewAI(
+		aiSpawn,
 		rl.NewVector2(30, 30),
 		rl.Green,
-		CreatureStats{
+		AIStats{
 			lvl:    1,
 			hp:     1,
-			speed:  300,
+			speed:  400,
 			maxLvl: 100,
 			maxHP:  100,
 		},
-		CreatureGrowthStats{
+		AIGrowthStats{
 			HPPerLevel:    0.25,
 			SpeedPerLevel: 0.25,
 			ExpAsleep:     0.001,
@@ -68,8 +67,7 @@ func NewWorld() *World {
 		1, 20,
 	)
 
-	w.entities = []GameObject{w.gameMap, w.player, w.fruitSpawner, w.creature}
-	w.hud = NewHUD(w)
+	w.entities = []GameObject{w.player, w.fruitSpawner, w.ai}
 	return w
 }
 
@@ -82,7 +80,9 @@ func (w *World) update(dt float32) {
 	}
 }
 
-func (w *World) draw() {
+func (w *World) draw(ctx RenderContext) {
+	w.gameMap.draw(ctx)
+
 	for _, entity := range w.entities {
 		entity.draw()
 	}
