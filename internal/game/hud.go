@@ -46,59 +46,68 @@ type HUD struct {
 }
 
 func NewHUD(world *World, window *Window) *HUD {
+	const (
+		fontSize  = 22
+		rowGap    = 10
+		rowHeight = fontSize + rowGap
+		top       = 20
+		playerX   = 30
+	)
+	aiX := float32(window.width - 200)
+
 	playerHpText := NewHUDText(
-		rl.NewVector2(30, 20),
-		22,
+		rl.NewVector2(playerX, top),
+		fontSize,
 		rl.RayWhite,
 		"hp:",
 		func() float32 { return world.player.stats.hp },
 	)
 	playerLvlText := NewHUDText(
-		rl.NewVector2(130, 20),
-		22,
+		rl.NewVector2(playerX, top+1*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"lvl:",
 		func() float32 { return float32(world.player.stats.lvl) },
 	)
 	playerExpText := NewHUDText(
-		rl.NewVector2(230, 20),
-		22,
+		rl.NewVector2(playerX, top+2*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"exp:",
 		func() float32 { return world.player.stats.exp },
 	)
 	playerSpeedText := NewHUDText(
-		rl.NewVector2(350, 20),
-		22,
+		rl.NewVector2(playerX, top+3*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"speed:",
 		func() float32 { return world.player.stats.speed },
 	)
 
 	aiHpText := NewHUDText(
-		rl.NewVector2(float32(window.width-150), 20),
-		22,
+		rl.NewVector2(aiX, top),
+		fontSize,
 		rl.RayWhite,
 		"ai hp:",
 		func() float32 { return world.ai.stats.hp },
 	)
 	aiLvlText := NewHUDText(
-		rl.NewVector2(float32(window.width-280), 20),
-		22,
+		rl.NewVector2(aiX, top+1*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"ai lvl:",
 		func() float32 { return float32(world.ai.stats.lvl) },
 	)
 	aiExpText := NewHUDText(
-		rl.NewVector2(float32(window.width-430), 20),
-		22,
+		rl.NewVector2(aiX, top+2*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"ai exp:",
 		func() float32 { return world.ai.stats.exp },
 	)
 	aiSpeedText := NewHUDText(
-		rl.NewVector2(float32(window.width-630), 20),
-		22,
+		rl.NewVector2(aiX, top+3*rowHeight),
+		fontSize,
 		rl.RayWhite,
 		"ai speed:",
 		func() float32 { return world.ai.stats.speed },
@@ -109,12 +118,13 @@ func NewHUD(world *World, window *Window) *HUD {
 		playerLvlText,
 		playerExpText,
 		playerSpeedText,
-		aiSpeedText,
-		aiExpText,
-		aiLvlText,
 		aiHpText,
+		aiLvlText,
+		aiExpText,
+		aiSpeedText,
 	}}
 	h.update(0)
+
 	return h
 }
 
