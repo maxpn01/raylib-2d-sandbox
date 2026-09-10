@@ -42,7 +42,7 @@ func NewDefaultAI(mapSize rl.Vector2) *AI {
 			HPAsleep:      0.001,
 		},
 		1,
-		500,
+		300,
 		120, 60,
 	)
 }
@@ -60,8 +60,8 @@ func NewWorld() *World {
 		rl.Red,
 		PlayerStats{
 			lvl:              1,
-			hp:               50,
-			speed:            1000,
+			hp:               1,
+			speed:            600,
 			sprintMultiplier: 1.5,
 			maxLvl:           100,
 			maxHP:            100,

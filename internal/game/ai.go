@@ -13,6 +13,7 @@ type AIActionState int
 const (
 	ActionSearchingFood AIActionState = iota
 	ActionEating
+	ActionFleeing
 	ActionSleeping
 )
 
@@ -56,6 +57,8 @@ type AI struct {
 	detectionRadius float32
 
 	wanderDirection rl.Vector2
+	escapeDirection rl.Vector2
+	escapeTimer     float32
 
 	isDeadFlag bool
 }
@@ -92,6 +95,7 @@ func (ai *AI) update(w *World, dt float32) {
 		return
 	}
 
+	ai.checkDangers(w.player)
 	ai.updateAwakenessStatus(dt)
 
 	switch ai.actionState {
@@ -99,6 +103,8 @@ func (ai *AI) update(w *World, dt float32) {
 		ai.seekFood(w.fruitSpawner, w.player, w.gameMap, dt)
 	case ActionEating:
 		ai.actionState = ActionSearchingFood
+	case ActionFleeing:
+		ai.flee(w.player, w.gameMap, dt)
 	case ActionSleeping:
 		ai.sleep(dt)
 	}
@@ -108,6 +114,98 @@ func (ai *AI) update(w *World, dt float32) {
 
 func (ai *AI) draw() {
 	rl.DrawRectangleV(ai.pos, ai.size, ai.color)
+}
+
+func (ai *AI) checkDangers(p *Player) {
+	radius := ai.detectionRadius
+
+	if ai.actionState == ActionFleeing {
+		radius *= 1.2
+	}
+
+	danger := p.canEatAI(ai) && ai.distanceTo(p.pos, p.size) <= radius*radius
+
+	if danger {
+		ai.actionState = ActionFleeing
+	} else if ai.actionState == ActionFleeing {
+		ai.actionState = ActionSearchingFood
+		ai.escapeTimer = 0
+	}
+}
+
+func (ai *AI) flee(p *Player, gameMap *Map, dt float32) {
+	aiCenter := rectCenter(ai.pos, ai.size)
+	playerCenter := rectCenter(p.pos, p.size)
+
+	away := rl.NewVector2(aiCenter.X-playerCenter.X, aiCenter.Y-playerCenter.Y)
+	direction := ai.chooseFleeDirection(gameMap, away, dt)
+
+	move := rl.Vector2Normalize(direction)
+
+	ai.pos.X += move.X * ai.stats.speed * dt
+	ai.pos.Y += move.Y * ai.stats.speed * dt
+
+	clamp(gameMap.edgePosX.start, &ai.pos.X, &ai.size.X, gameMap.edgePosX.end)
+	clamp(gameMap.edgePosY.start, &ai.pos.Y, &ai.size.Y, gameMap.edgePosY.end)
+}
+
+/* arigato ai bish for this corner case checking */
+func (ai *AI) chooseFleeDirection(gameMap *Map, away rl.Vector2, dt float32) rl.Vector2 {
+	direction := away
+	if direction.X == 0 && direction.Y == 0 {
+		direction = rl.NewVector2(1, 0)
+	}
+
+	if ai.escapeTimer > 0 {
+		direction = ai.escapeDirection
+		ai.escapeTimer = max(0, ai.escapeTimer-dt)
+	}
+
+	walls := struct{ left, right, top, bottom bool }{
+		left:   ai.pos.X <= gameMap.edgePosX.start,
+		right:  ai.pos.X+ai.size.X >= gameMap.edgePosX.end,
+		top:    ai.pos.Y <= gameMap.edgePosY.start,
+		bottom: ai.pos.Y+ai.size.Y >= gameMap.edgePosY.end,
+	}
+
+	if (walls.left && direction.X < 0) || (walls.right && direction.X > 0) {
+		direction.X = 0
+		ai.escapeTimer = 0
+	}
+	if (walls.top && direction.Y < 0) || (walls.bottom && direction.Y > 0) {
+		direction.Y = 0
+		ai.escapeTimer = 0
+	}
+
+	if direction.X != 0 || direction.Y != 0 {
+		return direction
+	}
+
+	inwardX, inwardY := float32(1), float32(1)
+	if walls.right {
+		inwardX = -1
+	}
+	if walls.bottom {
+		inwardY = -1
+	}
+
+	switch {
+	case (walls.left || walls.right) && (walls.top || walls.bottom):
+		if inwardX*away.X >= inwardY*away.Y {
+			direction = rl.NewVector2(inwardX, 0)
+		} else {
+			direction = rl.NewVector2(0, inwardY)
+		}
+	case walls.left || walls.right:
+		direction = rl.NewVector2(0, 1)
+	case walls.top || walls.bottom:
+		direction = rl.NewVector2(1, 0)
+	}
+
+	ai.escapeDirection = direction
+	ai.escapeTimer = 0.3
+
+	return direction
 }
 
 func (ai *AI) seekFood(fs *FruitSpawner, p *Player, gameMap *Map, dt float32) {
@@ -123,7 +221,7 @@ func (ai *AI) seekFood(fs *FruitSpawner, p *Player, gameMap *Map, dt float32) {
 }
 
 func (ai *AI) chooseFoodTarget(fs *FruitSpawner, p *Player) (targetPos rl.Vector2, targetSize rl.Vector2, targetFound bool) {
-	closestFruit, closestFruitDistance, fruitFound := ai.findClosestFruit(fs)
+	closestFruit, closestFruitDistance, fruitFound := ai.findClosestFruit(fs, p)
 
 	if ai.canEatPlayer(p) {
 		playerDistance := ai.distanceTo(p.pos, p.size)
@@ -146,19 +244,25 @@ func (ai *AI) chooseFoodTarget(fs *FruitSpawner, p *Player) (targetPos rl.Vector
 	return rl.Vector2{}, rl.Vector2{}, false
 }
 
-func (ai *AI) findClosestFruit(fs *FruitSpawner) (closestFruit Fruit, closestFruitDistance float32, found bool) {
+func (ai *AI) findClosestFruit(fs *FruitSpawner, p *Player) (closestFruit Fruit, closestFruitDistance float32, found bool) {
 	radiusSquared := ai.detectionRadius * ai.detectionRadius
 
 	for _, fruit := range fs.fruits {
-		distance := ai.distanceTo(fruit.pos, fruit.size)
+		distanceToPlayer := findSquaredEuclideanDistance(rectCenter(fruit.pos, fruit.size), rectCenter(p.pos, p.size))
 
-		if distance > radiusSquared {
+		if p.canEatAI(ai) && distanceToPlayer <= radiusSquared {
 			continue
 		}
 
-		if !found || distance < closestFruitDistance {
+		distanceToFruit := ai.distanceTo(fruit.pos, fruit.size)
+
+		if distanceToFruit > radiusSquared {
+			continue
+		}
+
+		if !found || distanceToFruit < closestFruitDistance {
 			closestFruit = fruit
-			closestFruitDistance = distance
+			closestFruitDistance = distanceToFruit
 			found = true
 		}
 	}
@@ -255,14 +359,16 @@ func (ai *AI) markAIDeath() {
 
 func (ai *AI) updateAwakenessStatus(dt float32) {
 	switch ai.actionState {
-	case ActionSearchingFood, ActionEating:
+	case ActionSearchingFood, ActionEating, ActionFleeing:
 		ai.awakeTimerSeconds -= dt
-		if ai.awakeTimerSeconds <= 0 {
+
+		if ai.awakeTimerSeconds <= 0 && ai.actionState != ActionFleeing {
 			ai.actionState = ActionSleeping
 			ai.asleepTimerSeconds = ai.asleepSeconds
 		}
 	case ActionSleeping:
 		ai.asleepTimerSeconds -= dt
+
 		if ai.asleepTimerSeconds <= 0 {
 			ai.actionState = ActionSearchingFood
 			ai.awakeTimerSeconds = ai.awakeSeconds
