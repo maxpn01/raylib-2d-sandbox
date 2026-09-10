@@ -58,6 +58,7 @@ func NewWorld(aiSpawn rl.Vector2) *World {
 			HPAsleep:      0.001,
 		},
 		1,
+		500,
 		120, 60,
 	)
 	w.fruitSpawner = NewFruitSpawner(

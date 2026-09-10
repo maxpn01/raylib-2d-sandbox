@@ -76,25 +76,32 @@ func NewHUD(world *World, window *Window) *HUD {
 	)
 
 	aiHpText := NewHUDText(
-		rl.NewVector2(float32(window.width-210), 20),
+		rl.NewVector2(float32(window.width-150), 20),
 		22,
 		rl.RayWhite,
 		"ai hp:",
 		func() float32 { return world.ai.stats.hp },
 	)
 	aiLvlText := NewHUDText(
-		rl.NewVector2(float32(window.width-420), 20),
+		rl.NewVector2(float32(window.width-280), 20),
 		22,
 		rl.RayWhite,
 		"ai lvl:",
 		func() float32 { return float32(world.ai.stats.lvl) },
 	)
 	aiExpText := NewHUDText(
-		rl.NewVector2(float32(window.width-650), 20),
+		rl.NewVector2(float32(window.width-430), 20),
 		22,
 		rl.RayWhite,
 		"ai exp:",
 		func() float32 { return world.ai.stats.exp },
+	)
+	aiSpeedText := NewHUDText(
+		rl.NewVector2(float32(window.width-630), 20),
+		22,
+		rl.RayWhite,
+		"ai speed:",
+		func() float32 { return world.ai.stats.speed },
 	)
 
 	h := &HUD{texts: []*HUDText{
@@ -102,9 +109,10 @@ func NewHUD(world *World, window *Window) *HUD {
 		playerLvlText,
 		playerExpText,
 		playerSpeedText,
-		aiHpText,
-		aiLvlText,
+		aiSpeedText,
 		aiExpText,
+		aiLvlText,
+		aiHpText,
 	}}
 	h.update(0)
 	return h

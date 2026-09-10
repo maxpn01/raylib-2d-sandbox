@@ -2,6 +2,7 @@ package game
 
 import (
 	"image/color"
+	"math/rand"
 	"slices"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -51,6 +52,10 @@ type AI struct {
 	asleepTimerSeconds float32
 
 	nutritionalFactor float32
+
+	detectionRadius float32
+
+	wanderDirection rl.Vector2
 }
 
 func NewAI(
@@ -60,6 +65,7 @@ func NewAI(
 	stats AIStats,
 	growth AIGrowthStats,
 	nutritionalFactor float32,
+	detectionRadius float32,
 	awake, asleep float32,
 ) *AI {
 	return &AI{
@@ -69,6 +75,8 @@ func NewAI(
 		stats:              stats,
 		growth:             growth,
 		nutritionalFactor:  nutritionalFactor,
+		detectionRadius:    detectionRadius,
+		wanderDirection:    rl.Vector2{},
 		awakeSeconds:       awake,
 		asleepSeconds:      asleep,
 		awakeTimerSeconds:  awake,
@@ -98,28 +106,29 @@ func (ai *AI) draw() {
 func (ai *AI) seekFood(fs *FruitSpawner, p *Player, gameMap *Map, dt float32) {
 	targetPos, targetSize, targetFound := ai.chooseFoodTarget(fs, p)
 
-	if !targetFound {
-		return
+	if targetFound {
+		ai.move(targetPos, targetSize, gameMap, dt)
+	} else {
+		ai.wander(gameMap, dt)
 	}
-
-	ai.move(targetPos, targetSize, gameMap, dt)
 
 	ai.handleFoodInteractions(fs, p)
 }
 
 func (ai *AI) chooseFoodTarget(fs *FruitSpawner, p *Player) (targetPos rl.Vector2, targetSize rl.Vector2, targetFound bool) {
-	closestFruit, fruitFound := ai.findClosestFruit(fs)
+	closestFruit, closestFruitDistance, fruitFound := ai.findClosestFruit(fs)
 
 	if ai.canEatPlayer(p) {
-		if !fruitFound {
-			return p.pos, p.size, true
-		}
-
 		playerDistance := ai.distanceTo(p.pos, p.size)
-		closestFruitDistance := ai.distanceTo(closestFruit.pos, closestFruit.size)
-		playerIsCloser := playerDistance <= closestFruitDistance
-		if playerIsCloser {
-			return p.pos, p.size, true
+		radiusSquared := ai.detectionRadius * ai.detectionRadius
+		playerIsWithinDetection := playerDistance <= radiusSquared
+
+		if playerIsWithinDetection {
+			playerIsCloser := playerDistance <= closestFruitDistance
+
+			if !fruitFound || playerIsCloser {
+				return p.pos, p.size, true
+			}
 		}
 	}
 
@@ -130,23 +139,24 @@ func (ai *AI) chooseFoodTarget(fs *FruitSpawner, p *Player) (targetPos rl.Vector
 	return rl.Vector2{}, rl.Vector2{}, false
 }
 
-func (ai *AI) findClosestFruit(fs *FruitSpawner) (Fruit, bool) {
-	if len(fs.fruits) == 0 {
-		return Fruit{}, false
-	}
+func (ai *AI) findClosestFruit(fs *FruitSpawner) (closestFruit Fruit, closestFruitDistance float32, found bool) {
+	radiusSquared := ai.detectionRadius * ai.detectionRadius
 
-	closestFruit := fs.fruits[0]
-	closestFruitDistance := ai.distanceTo(closestFruit.pos, closestFruit.size)
-
-	for _, fruit := range fs.fruits[1:] {
+	for _, fruit := range fs.fruits {
 		distance := ai.distanceTo(fruit.pos, fruit.size)
-		if distance <= closestFruitDistance {
-			closestFruitDistance = distance
+
+		if distance > radiusSquared {
+			continue
+		}
+
+		if !found || distance < closestFruitDistance {
 			closestFruit = fruit
+			closestFruitDistance = distance
+			found = true
 		}
 	}
 
-	return closestFruit, true
+	return closestFruit, closestFruitDistance, found
 }
 
 func (ai *AI) distanceTo(pos, size rl.Vector2) float32 {
@@ -158,16 +168,41 @@ func (ai *AI) canEatPlayer(p *Player) bool {
 }
 
 func (ai *AI) move(targetPos, targetSize rl.Vector2, gameMap *Map, dt float32) {
-	// Align our center with the target's center, accounting for their different sizes.
 	target := rl.NewVector2(
 		targetPos.X+targetSize.X/2-ai.size.X/2,
 		targetPos.Y+targetSize.Y/2-ai.size.Y/2,
 	)
-	// Travel at most speed * dt, stopping at the target rather than overshooting it.
 	ai.pos = rl.Vector2MoveTowards(ai.pos, target, ai.stats.speed*dt)
 
 	clamp(gameMap.edgePosX.start, &ai.pos.X, &ai.size.X, gameMap.edgePosX.end)
 	clamp(gameMap.edgePosY.start, &ai.pos.Y, &ai.size.Y, gameMap.edgePosY.end)
+}
+
+func (ai *AI) wander(gameMap *Map, dt float32) {
+	if ai.wanderDirection.X == 0 && ai.wanderDirection.Y == 0 {
+		ai.wanderDirection = rl.NewVector2(
+			float32(rand.Intn(3)-1),
+			float32(rand.Intn(3)-1),
+		)
+	}
+
+	direction := ai.wanderDirection
+
+	move := rl.Vector2Normalize(direction)
+
+	ai.pos.X += move.X * ai.stats.speed * dt
+	ai.pos.Y += move.Y * ai.stats.speed * dt
+
+	attemptedPos := ai.pos
+
+	clamp(gameMap.edgePosX.start, &ai.pos.X, &ai.size.X, gameMap.edgePosX.end)
+	clamp(gameMap.edgePosY.start, &ai.pos.Y, &ai.size.Y, gameMap.edgePosY.end)
+
+	directionShouldReset := ai.pos != attemptedPos
+
+	if directionShouldReset {
+		ai.wanderDirection = rl.Vector2{}
+	}
 }
 
 func (ai *AI) handleFoodInteractions(fs *FruitSpawner, p *Player) {
