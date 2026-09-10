@@ -101,6 +101,11 @@ func (m *Menu) draw() Action {
 	}
 
 	y := (float32(rl.GetScreenHeight()) - totalHeight) / 2
+
+	return m.drawOptions(y)
+}
+
+func (m *Menu) drawOptions(y float32) Action {
 	action := ActionNone
 
 	for _, btn := range m.Options {

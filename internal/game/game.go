@@ -5,11 +5,12 @@ import (
 )
 
 type Game struct {
-	window *Window
-	camera rl.Camera2D
-	menu   *Menu
-	world  *World
-	hud    *HUD
+	window   *Window
+	camera   rl.Camera2D
+	menu     *Menu
+	gameOver *GameOver
+	world    *World
+	hud      *HUD
 }
 
 func NewGame() *Game {
@@ -32,11 +33,12 @@ func NewGame() *Game {
 	hud := NewHUD(world, window)
 
 	return &Game{
-		window: window,
-		camera: camera,
-		menu:   menu,
-		world:  world,
-		hud:    hud,
+		window:   window,
+		camera:   camera,
+		menu:     menu,
+		gameOver: NewGameOver(),
+		world:    world,
+		hud:      hud,
 	}
 }
 
@@ -56,16 +58,13 @@ func (g *Game) run() {
 	for !rl.WindowShouldClose() && !exitRequested {
 		dt := rl.GetFrameTime()
 
-		if rl.IsKeyPressed(rl.KeyEscape) {
+		if !g.world.player.isDeadFlag && rl.IsKeyPressed(rl.KeyEscape) {
 			menuOpen = !menuOpen
 		}
 
-		if !menuOpen {
+		if !menuOpen && !g.world.player.isDeadFlag {
 			g.world.player.readInput()
 			g.world.update(dt)
-			if g.world.player.isDeadFlag {
-				g.restart()
-			}
 
 			g.cameraFollowPlayer()
 
@@ -75,7 +74,15 @@ func (g *Game) run() {
 		rl.BeginDrawing()
 		rl.ClearBackground(g.window.bgColor)
 
-		if menuOpen {
+		if g.world.player.isDeadFlag {
+			switch g.gameOver.draw() {
+			case ActionPlay:
+				g.restart()
+				menuOpen = false
+			case ActionExit:
+				exitRequested = true
+			}
+		} else if menuOpen {
 			switch g.menu.draw() {
 			case ActionPlay:
 				menuOpen = false
