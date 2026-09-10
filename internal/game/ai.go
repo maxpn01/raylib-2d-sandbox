@@ -56,6 +56,8 @@ type AI struct {
 	detectionRadius float32
 
 	wanderDirection rl.Vector2
+
+	isDeadFlag bool
 }
 
 func NewAI(
@@ -77,6 +79,7 @@ func NewAI(
 		nutritionalFactor:  nutritionalFactor,
 		detectionRadius:    detectionRadius,
 		wanderDirection:    rl.Vector2{},
+		isDeadFlag:         false,
 		awakeSeconds:       awake,
 		asleepSeconds:      asleep,
 		awakeTimerSeconds:  awake,
@@ -85,6 +88,10 @@ func NewAI(
 }
 
 func (ai *AI) update(w *World, dt float32) {
+	if ai.isDeadFlag {
+		return
+	}
+
 	ai.updateAwakenessStatus(dt)
 
 	switch ai.actionState {
@@ -215,13 +222,9 @@ func (ai *AI) handleFoodInteractions(fs *FruitSpawner, p *Player) {
 
 	hasAICollidedWithPlayer := checkCollisions(ai.pos, ai.size, p.pos, p.size)
 
-	if hasAICollidedWithPlayer {
-		if ai.canEatPlayer(p) {
-			ai.eatFood(p.nutritionalValue())
-			p.markPlayerDeath()
-		} else {
-			// kill ai
-		}
+	if hasAICollidedWithPlayer && ai.canEatPlayer(p) {
+		ai.eatFood(p.nutritionalValue())
+		p.markPlayerDeath()
 	}
 }
 
@@ -244,6 +247,10 @@ func (ai *AI) nutritionalValue() float32 {
 func (ai *AI) eatFood(nutrition float32) {
 	ai.stats.exp += nutrition
 	ai.actionState = ActionEating
+}
+
+func (ai *AI) markAIDeath() {
+	ai.isDeadFlag = true
 }
 
 func (ai *AI) updateAwakenessStatus(dt float32) {

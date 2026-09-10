@@ -64,7 +64,7 @@ func NewPlayer(
 
 func (p *Player) update(w *World, dt float32) {
 	p.move(w.gameMap, dt)
-	p.handleFruitCollision(w.fruitSpawner)
+	p.handleFoodCollision(w.fruitSpawner, w.ai)
 	p.handleLevelUp()
 }
 
@@ -108,6 +108,21 @@ func (p *Player) move(gameMap *Map, dt float32) {
 
 	clamp(gameMap.edgePosX.start, &p.pos.X, &p.size.X, gameMap.edgePosX.end)
 	clamp(gameMap.edgePosY.start, &p.pos.Y, &p.size.Y, gameMap.edgePosY.end)
+}
+
+func (p *Player) handleFoodCollision(fs *FruitSpawner, ai *AI) {
+	p.handleFruitCollision(fs)
+
+	hasPlayerCollidedWithAI := checkCollisions(p.pos, p.size, ai.pos, ai.size)
+
+	if hasPlayerCollidedWithAI && p.canEatAI(ai) {
+		p.eatFood(ai.nutritionalValue())
+		ai.markAIDeath()
+	}
+}
+
+func (p *Player) canEatAI(ai *AI) bool {
+	return !ai.isDeadFlag && p.stats.hp > ai.stats.hp
 }
 
 func (p *Player) handleFruitCollision(fs *FruitSpawner) {

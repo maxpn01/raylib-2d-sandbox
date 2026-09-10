@@ -1,6 +1,10 @@
 package game
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"math/rand"
+
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 type GameObject interface {
 	update(w *World, dt float32)
@@ -15,34 +19,14 @@ type World struct {
 	entities     []GameObject
 }
 
-func NewWorld(aiSpawn rl.Vector2) *World {
-	w := &World{}
-	w.gameMap = NewMap(
-		rl.NewVector2(200, 200),
-		rl.NewVector2(10, 10),
-		rl.Black, rl.Gray,
-	)
-	w.player = NewPlayer(
-		rl.NewVector2(300, 300),
-		rl.NewVector2(30, 30),
-		rl.Red,
-		PlayerStats{
-			lvl:              1,
-			hp:               1,
-			speed:            500,
-			sprintMultiplier: 1.15,
-			maxLvl:           100,
-			maxHP:            100,
-		},
-		PlayerGrowthStats{
-			HPPerLevel:    0.25,
-			SpeedPerLevel: 0.25,
-		},
-		1,
-	)
-	w.ai = NewAI(
-		aiSpawn,
-		rl.NewVector2(30, 30),
+func NewDefaultAI(mapSize rl.Vector2) *AI {
+	size := rl.NewVector2(30, 30)
+	x := size.X + float32(rand.Intn(int(mapSize.X)-int(size.X)))
+	y := size.Y + float32(rand.Intn(int(mapSize.Y)-int(size.Y)))
+
+	return NewAI(
+		rl.NewVector2(x, y),
+		size,
 		rl.Green,
 		AIStats{
 			lvl:    1,
@@ -61,6 +45,34 @@ func NewWorld(aiSpawn rl.Vector2) *World {
 		500,
 		120, 60,
 	)
+}
+
+func NewWorld() *World {
+	w := &World{}
+	w.gameMap = NewMap(
+		rl.NewVector2(200, 200),
+		rl.NewVector2(10, 10),
+		rl.Black, rl.Gray,
+	)
+	w.player = NewPlayer(
+		rl.NewVector2(300, 300),
+		rl.NewVector2(30, 30),
+		rl.Red,
+		PlayerStats{
+			lvl:              1,
+			hp:               50,
+			speed:            1000,
+			sprintMultiplier: 1.5,
+			maxLvl:           100,
+			maxHP:            100,
+		},
+		PlayerGrowthStats{
+			HPPerLevel:    0.25,
+			SpeedPerLevel: 0.25,
+		},
+		1,
+	)
+	w.ai = NewDefaultAI(w.gameMap.size)
 	w.fruitSpawner = NewFruitSpawner(
 		rl.NewVector2(15, 15),
 		rl.Yellow,
@@ -82,7 +94,12 @@ func (w *World) update(dt float32) {
 			if w.player.isDeadFlag {
 				return
 			}
+
 			entity.update(w, step)
+		}
+
+		if w.ai.isDeadFlag {
+			*w.ai = *NewDefaultAI(w.gameMap.size)
 		}
 
 		dt -= step

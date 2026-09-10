@@ -27,7 +27,7 @@ func NewGame() *Game {
 		NewMenuButton("exit", ActionExit),
 	}, 30, rl.Black)
 
-	world := NewWorld(window.getWindowCenter())
+	world := NewWorld()
 
 	hud := NewHUD(world, window)
 
@@ -101,7 +101,7 @@ func (g *Game) run() {
 }
 
 func (g *Game) restart() {
-	g.world = NewWorld(g.window.getWindowCenter())
+	g.world = NewWorld()
 	g.hud = NewHUD(g.world, g.window)
 	g.cameraFollowPlayer()
 }
